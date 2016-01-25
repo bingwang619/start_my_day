@@ -20,8 +20,18 @@ def load_config(config_file):
     return sec_opt2val
 
 def load_template(template_file):
-    template_file = open(template_file).read()
-    return template_file
+    temp_block = []
+    handle = open(template_file)
+    line = handle.readline()
+    while line:
+        if line.startswith("<!--"):
+            while "-->" not in line:
+                line = handle.readline()
+            line = handle.readline()
+            continue
+        temp_block.append(line)
+        line = handle.readline()
+    return "".join(temp_block)
 
 def get_date_today(time_str):
     # time_str = "{0:%Y}年{0:%m}月{0:%d}日 {0:%H}时{0:%M}分"

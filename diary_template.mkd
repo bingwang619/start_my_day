@@ -10,13 +10,13 @@
 
 {habit_today}
 
+###
 
 
 
 <!--
-可用的字符串：
+可用的{string}：
 
 + date_today
 + habit_today
-
 -->
