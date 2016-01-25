@@ -1,4 +1,4 @@
-##{date_today} 心情:「」
+##{date_today} 心情: _____
 
 ###今天最重要的三件事
 
@@ -8,15 +8,15 @@
 
 ###今天想要关注的习惯
 
-{today_habit}
+{habit_today}
 
 
 
 
 <!--
-可用的{string}：
+可用的字符串：
 
 + date_today
-+ today_habit
++ habit_today
 
 -->
