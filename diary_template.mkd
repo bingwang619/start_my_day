@@ -1,4 +1,8 @@
-##{date_today} 心情: _____
+##{date_today} 心情: _____ 
+
+###天气
+
+{whether_today}
 
 ###今天最重要的三件事
 
@@ -6,17 +10,25 @@
 2. ________________
 3. ________________
 
+###提醒
+
+{reminder_today}
+
 ###今天想要关注的习惯
 
 {habit_today}
 
+###提问时间
+
+{questions_today}
+
 ###
-
-
 
 <!--
 可用的{string}：
 
 + date_today
 + habit_today
++ reminder_today
++ questions_today
 -->
