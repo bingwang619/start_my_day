@@ -3,14 +3,18 @@
 
 import sys
 import os
+import requests
 import random
+from pprint import pprint
 from datetime import datetime
-import ConfigParser
+import configparser
+import json
 
 CONFIG_FILE = "./start_my_day.conf"
+BAIDU_WEATHER_API = "http://apis.baidu.com/heweather/weather/free"
 
 def load_config(config_file):
-    config = ConfigParser.RawConfigParser(allow_no_value=True)
+    config = configparser.RawConfigParser(allow_no_value=True)
     config.readfp(open(config_file))
     sec_opt2val = {}
     for section in config.sections():
@@ -42,7 +46,7 @@ def get_date_today(conf):
 def get_today_habit(conf):
     habit_list = conf["habit_list"].keys()
     habit_count = 1
-    return "".join(["+ %s\n"%(s) for s in 
+    return "\n".join(["+ %s"%(s) for s in 
         random.sample(habit_list,habit_count)])
 
 def get_reminder_today(conf):
@@ -55,12 +59,42 @@ def get_book_to_read(conf):
 def get_questions(conf):
     questions_list = conf["questions_list"].keys()
     questions_count = min(len(questions_list),
-            conf["base_config"]["questions_per_day"])
-    return "\n".join(["+ %s\n"%(s) for s in 
+            int(conf["base_config"]["questions_per_day"]))
+    return "\n\n".join(["+ %s"%(s) for s in 
         random.sample(questions_list,questions_count)])
 
 def get_whether(conf):
-    return "today_whether"
+    api_key = open(conf["base_config"]["baidu_api_key"]).read().strip()
+    city = conf["base_config"]["city"]
+    api_url = "%s?city=%s"%(BAIDU_WEATHER_API,city)
+    r = requests.get(api_url, headers={"apikey":api_key})
+    content = json.loads(r.text)
+    a = content["HeWeather data service 3.0"][0]
+    if not a["status"] == u"ok":
+        return "weather api down"
+
+    tmp_data = {
+        "temp_range": "%s ℃ - %s ℃"%(a["daily_forecast"][0]["tmp"]["min"],
+            a["daily_forecast"][0]["tmp"]["max"]),
+        "rain_percent": "\n".join(["    + %s: %s %%"%(rp["date"].split(" ")[1],rp["pop"]) for
+            rp in a["hourly_forecast"]]),
+        "air_quality": a["aqi"]["city"]["qlty"],
+        "aqi": a["aqi"]["city"]["aqi"],
+        "pm25": a["aqi"]["city"]["pm25"],
+        }
+
+    whether_string = \
+"""+ 温差：{temp_range}
++ 空气质量：{air_quality}
+    + AQI: {aqi}
+    + PM2.5: {pm25}
++ 下雨概率：
+{rain_percent}""".format(**tmp_data)
+   
+    return whether_string
+
+def data2weekday(data_str):
+    return datetime.strptime(data_str,"%Y-%m-%d").strftime("%A")
 
 def main(config_file):
     conf = load_config(config_file)
@@ -72,7 +106,7 @@ def main(config_file):
             "questions_today":get_questions(conf),
             "whether_today":get_whether(conf)
             }
-    print template_string.format(**data)
+    print(template_string.format(**data))
 
 if __name__ == "__main__":
     main(CONFIG_FILE)
