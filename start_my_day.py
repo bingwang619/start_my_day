@@ -9,6 +9,7 @@ from pprint import pprint
 from datetime import datetime
 import configparser
 import json
+import shutil
 
 CONFIG_FILE = "./start_my_day.conf"
 BAIDU_WEATHER_API = "http://apis.baidu.com/heweather/weather/free"
@@ -49,12 +50,27 @@ def get_today_habit(conf):
     return "\n".join(["+ %s"%(s) for s in 
         random.sample(habit_list,habit_count)])
 
+def days_matter_reminder(conf):
+    days_matter_block = []
+    for day in conf["days_matter"].keys():
+        days_matter_block.append({"day":day,"event":conf["days_matter"][day]})
+    return days_matter_block
+
 def get_reminder_today(conf):
+    days_matter = days_matter_reminder(conf)
     return "day"
 
 def get_book_to_read(conf):
-    book_list = conf["book_list"]
+    book_list = conf["book_list"].keys()
+    book_count = 1
+    book_today = [s for s in random.sample(book_list,book_count)]
     note_template = conf["base_config"]["note_template"]
+    for book in book_today:
+        note_target = "%s/笔记_%s_%s.mkd"%(conf["base_config"]["diary_path"],
+            book,datetime.today().strftime("%Y%m%d"))
+        # copy template file
+        shutil.copyfile(note_template,note_target)
+    return "\n".join(["+ 「%s」"%(s) for s in book_today])
 
 def get_questions(conf):
     questions_list = conf["questions_list"].keys()
@@ -93,8 +109,11 @@ def get_whether(conf):
    
     return whether_string
 
-def data2weekday(data_str):
-    return datetime.strptime(data_str,"%Y-%m-%d").strftime("%A")
+def date2weekday(date_str):
+    return datetime.strptime(date_str,"%Y-%m-%d").strftime("%A")
+
+def date2datetime(date_str):
+    return datetime.strptime(date_str,"%Y-%m-%d")
 
 def main(config_file):
     conf = load_config(config_file)

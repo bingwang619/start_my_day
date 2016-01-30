@@ -18,11 +18,13 @@
 
 {habit_today}
 
+###今天想读书
+
+{book_to_read_today}
+
 ###提问时间
 
 {questions_today}
-
-###
 
 <!--
 可用的{string}：
