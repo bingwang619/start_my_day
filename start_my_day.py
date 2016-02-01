@@ -50,15 +50,47 @@ def get_today_habit(conf):
     return "\n".join(["+ %s"%(s) for s in 
         random.sample(habit_list,habit_count)])
 
-def days_matter_reminder(conf):
-    days_matter_block = []
-    for day in conf["days_matter"].keys():
-        days_matter_block.append({"day":day,"event":conf["days_matter"][day]})
-    return days_matter_block
-
 def get_reminder_today(conf):
-    days_matter = days_matter_reminder(conf)
-    return "day"
+    today = datetime.today()
+    content_plus = []
+    content_today = []
+    content_minus = []
+    # add days_matter this year
+    for date_str in conf["days_matter"]:
+        date_this_year = "%d-%s"%(today.year,date_str[-5:])
+        event = "%s %d 周年"%(conf["days_matter"][date_str],
+                              today.year - int(date_str[:4]))
+        delta_today = (today - datetime.strptime(date_this_year,"%Y-%m-%d")).days
+        if delta_today == 0:
+            content_today.append("+ 今天「%s」"%(event))
+        elif delta_today < 0:
+            content_minus.append("+ 距离「%s」还有 %d 天"%(event,-delta_today))
+
+    # block_days_matter
+    for date_str in conf["days_matter"]:
+        delta_today = (today - datetime.strptime(date_str,"%Y-%m-%d")).days
+        event = conf["days_matter"][date_str]
+        if delta_today > 0:
+            content_plus.append("+ 距离「%s」已经 %d 天了"%(event,delta_today))
+        elif delta_today == 0:
+            content_today.append("+ 今天「%s」"%(event))
+        else:
+            content_minus.append("+ 距离「%s」还有 %d 天"%(event,-delta_today))
+
+    # block_today_events
+    for monthday in conf["monthly_event"]:
+        if today.day == int(monthday):
+            for event in conf["monthly_event"][monthday].split(","):
+                content_today.append("+ 今天「%s」"%(event.strip()))
+
+    for weekday in conf["weekly_event"]:
+        if today.strftime("%A").lower() == weekday.lower():
+            content_today.append("+ 今天「%s」"%(conf["weekly_event"][weekday]))
+
+    for daily_event in conf["daily_event"]:
+        content_today.append("+ 今天「%s」"%(daily_event))
+
+    return "\n".join(content_plus+content_minus+content_today)
 
 def get_book_to_read(conf):
     book_list = conf["book_list"].keys()
@@ -92,8 +124,7 @@ def get_whether(conf):
     tmp_data = {
         "temp_range": "%s ℃ - %s ℃"%(a["daily_forecast"][0]["tmp"]["min"],
             a["daily_forecast"][0]["tmp"]["max"]),
-        "rain_percent": "\n".join(["    + %s: %s %%"%(rp["date"].split(" ")[1],rp["pop"]) for
-            rp in a["hourly_forecast"]]),
+        "rain_percent": "%d %%"%(max([int(rp["pop"]) for rp in a["hourly_forecast"]])),
         "air_quality": a["aqi"]["city"]["qlty"],
         "aqi": a["aqi"]["city"]["aqi"],
         "pm25": a["aqi"]["city"]["pm25"],
@@ -104,16 +135,9 @@ def get_whether(conf):
 + 空气质量：{air_quality}
     + AQI: {aqi}
     + PM2.5: {pm25}
-+ 下雨概率：
-{rain_percent}""".format(**tmp_data)
++ 下雨概率：{rain_percent}""".format(**tmp_data)
    
     return whether_string
-
-def date2weekday(date_str):
-    return datetime.strptime(date_str,"%Y-%m-%d").strftime("%A")
-
-def date2datetime(date_str):
-    return datetime.strptime(date_str,"%Y-%m-%d")
 
 def main(config_file):
     conf = load_config(config_file)
