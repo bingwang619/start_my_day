@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 # coding: utf-8
 
 import sys
@@ -11,7 +11,7 @@ import configparser
 import json
 import shutil
 
-CONFIG_FILE = "./start_my_day.conf"
+CONFIG_FILE = "%s/start_my_day.conf"%(os.path.abspath(os.path.dirname(__file__)))
 BAIDU_WEATHER_API = "http://apis.baidu.com/heweather/weather/free"
 
 def load_config(config_file):
@@ -98,10 +98,14 @@ def get_book_to_read(conf):
     book_today = [s for s in random.sample(book_list,book_count)]
     note_template = conf["base_config"]["note_template"]
     for book in book_today:
-        note_target = "%s/笔记_%s_%s.mkd"%(conf["base_config"]["diary_path"],
-            book,datetime.today().strftime("%Y%m%d"))
+        note_filename = "笔记_%s_%s.mkd"%(book,datetime.today().strftime("%Y%m%d"))
+        note_archive = "%s/%s"%(conf["base_config"]["diary_archive_path"],note_filename)
+        note_link = "%s/%s"%(conf["base_config"]["diary_path"],note_filename)
         # copy template file
-        shutil.copyfile(note_template,note_target)
+        if not os.path.isfile(note_archive):
+            shutil.copyfile(note_template,note_archive)
+            os.link(note_archive,note_link)
+
     return "\n".join(["+ 「%s」"%(s) for s in book_today])
 
 def get_questions(conf):
@@ -149,7 +153,12 @@ def main(config_file):
             "questions_today":get_questions(conf),
             "whether_today":get_whether(conf)
             }
-    print(template_string.format(**data))
+    content = template_string.format(**data)
+    filename = "日志_%s.mkd"%(datetime.today().strftime("%Y%m%d"))
+    diary_path = "%s/%s"%(conf["base_config"]["diary_archive_path"],filename)
+    if not os.path.isfile(diary_path):
+        open(diary_path,"w").write(content)
+        os.link(diary_path,"%s/%s"%(conf["base_config"]["diary_path"],filename))
 
 if __name__ == "__main__":
     main(CONFIG_FILE)
