@@ -26,6 +26,8 @@
 
 {questions_today}
 
+###今天有什么感想吗
+
 <!--
 可用的{string}：
 
